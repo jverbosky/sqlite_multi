@@ -1,95 +1,54 @@
 require 'sqlite3'
 require 'base64'
 
-# begin
+# Method to return the contents of SQLite database
+def read_db()
+  if File.exist?('public/personal_details.db')
+    db = SQLite3::Database.open './public/personal_details.db'
+  else
+    db = []
+  end
+end
 
-    def get_data(column, value)
+# Method to rearrange names for (top > down) then (left > right) column population
+def rotate_names(names)
+  quotient = names.count/3  # baseline for number of names per column
+  names.count % quotient > 0 ? remainder = 1 : remainder = 0  # remainder to ensure no names dropped
+  max_column_count = quotient + remainder  # add quotient & remainder to get max number of names per column
+  matrix = names.each_slice(max_column_count).to_a    # names divided into three (inner) arrays
+  results = matrix[0].zip(matrix[1], matrix[2]).flatten   # names rearranged (top > bottom) then (left > right) in table
+  results.each_index { |name| results[name] ||= "" }  # replace any nils (due to uneven .zip) with ""
+end
 
-      info = []
+# Method to return array of sorted/transposed names from SQLite db for populating /list_users table
+def get_names()
+  db = read_db()
+  names = []
+  query = db.execute("select name from details order by name")
+  query.each { |name| names.push(name[0])}
+  sorted = names.count > 3 ? rotate_names(names) : names  # rerrange names if more than 3 names
+end
 
-      db = SQLite3::Database.open './public/personal_details.db'
-      db.results_as_hash = true
+# Method to return user hash from SQLite db for specified user
+def get_data(user_name)
+  db = read_db()
+  db.results_as_hash = true
+  user_hash = db.execute("select * from details join images on details.id = images.details_id where details.name = '#{user_name}'")
+  return user_hash[0]  # get hash from array
+end
 
-      # example of getting column names
-      # d_columns = db.execute2("select * from details join images on details.id = images.details_id")[0]
-      # p d_columns  # ["id", "name", "age", "num_1", "num_2", "num_3", "quote", "id", "details_id", "image"]
+# Method to return (strict) base64-encoded image for the specified user
+def get_image(user_name)
+  user_hash = get_data(user_name)
+  image = user_hash["image"]
+end
 
-      # example of getting all data from both tables in personal_details.db
-      # p db.execute('select * from details join images on details.id = images.details_id')
+# Method to return the sum of favorite numbers
+def sum(n1, n2, n3)
+  sum = n1.to_i + n2.to_i + n3.to_i
+end
 
-      user_hash = db.execute("select * from details join images on details.id = images.details_id where details.#{column} = '#{value}'")
-
-      # prepare data for iteration
-      # d_query = db.prepare("select * from details join images on details.id = images.details_id where name = #{name}")
-      # d_rows = d_query.execute
-
-      # iterate through each row for user data and image
-      # d_rows.each do |row|
-
-      #   # output user data to console
-      #   puts "Details ID: #{row['id']}"
-      #   puts "Images ID: #{row['details_id']}"
-      #   puts "Name: #{row['name']}"
-      #   puts "Age: #{row['age']}"
-      #   puts "Favorite number 1: #{row['num_1']}"
-      #   puts "Favorite number 2: #{row['num_2']}"
-      #   puts "Favorite number 3: #{row['num_3']}"
-      #   puts "Quote: #{row['quote']}"
-
-      #   # output user image to current directory, named based on user name and ID
-      #   image = row['image']
-      #   f = File.new "#{row['name']}_#{row['id']}_output.png", "wb"
-      #   f.write image
-      #   f.close if f
-      # end
-
-      return user_hash[0]
-
-    end
-
-    def get_image(column, value)
-      user_hash = get_data(column, value)
-      image = user_hash["image"]
-      # cleaned = image_string.gsub("\u0000", '')
-      # file = StringIO.new(image_string)
-      # file = File.new(cleaned)
-      # file = File.binread(cleaned, "rb").read
-      # file = IO.binread(cleaned)
-      # file = File.open(image_string, "rb").read
-      # return file
-    end
-
-
-      # image = row['image']
-      # f = File.new "#{row['name']}_#{row['id']}_output.png", "wb"
-      # f.write(Base64.decode64(image))
-
-
-
-# user_hash = get_data("name", "John")
-# # p user_hash["image"]
-# image = get_image("name", "John")
-# p image
-
-
-    # --- Example data ---
-    # Details ID: 1
-    # Images ID: 1
-    # Name: John
-    # Age: 41
-    # Favorite number 1: 7
-    # Favorite number 2: 11
-    # Favorite number 3: 3
-    # Quote: Research is what I'm doing when I don't know what I'm doing.
-    # --------------------
-
-# rescue SQLite3::Exception, SystemCallError => e
-
-#     puts "Exception occurred"
-#     puts e
-
-# ensure
-
-#     db.close if db
-
-# end
+# Method to compare the sum of favorite numbers against the person's age
+def compare(sum, age)
+  comparison = (sum < age.to_i) ? "less" : "greater"
+end

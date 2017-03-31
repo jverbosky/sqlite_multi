@@ -1,7 +1,7 @@
 <div>
 
   <div>
-    <h4>Here are the details for <%= user_hash["user_name"] %>:</h4>
+    <h4>Here are the details for <%= user_hash["name"] %>:</h4>
   </div>
 
   <div class="padding">
@@ -32,23 +32,22 @@
       </tr>
       <tr>
         <td class="wide"><b>Image: </b></td>
-        <td class="wide"><img src="data:image/png;base64,<%= file %>"></td>
+        <td class="wide"><img class="center-block" src="data:image/png;base64,<%= file %>"></td>
       </tr>
     </table>
   </div>
 
   <hr>
 
-<!--
   <div>
     <h4>What would you like to do next?</h4>
     <div class="padding">
-      <p><a href = "/">Enter info for someone else</a></p>
-      <p><a href = "/list_users">View info for someone else</a></p>
+      <!-- <p><a href = "/">Enter info for someone else</a></p> -->
+      <p><a href = "/">View info for someone else</a></p>
     </div>
   </div>
 
   <hr>
--->
+
 
 </div>
