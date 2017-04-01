@@ -1,13 +1,49 @@
 require 'sqlite3'
 require 'base64'
 
-# Method to return the contents of SQLite database
+# Method to open and return the contents of SQLite database
 def read_db()
   if File.exist?('public/personal_details.db')
     db = SQLite3::Database.open './public/personal_details.db'
   else
     db = []
   end
+end
+
+# Method to add current user hash to SQLite db
+def write_db(user_hash)
+
+  # open database for updating
+  db = read_db()
+
+  # determine current max index (id) in details table
+  db.results_as_hash
+  max_id = db.execute('select max("id") from details')[0][0]
+
+  # set index variable based on current max index value
+  max_id == nil ? id = 1 : id = max_id + 1
+
+  # prepare data from user_hash for database insert
+  name = user_hash["name"]
+  age = user_hash["age"]
+  n1 = user_hash["n1"]
+  n2 = user_hash["n2"]
+  n3 = user_hash["n3"]
+  quote = user_hash["quote"]
+
+  # prepare image for database insertion (use strict base64 encoding)
+  file_open = File.binread(user_hash["image"][:tempfile])
+  image = Base64.strict_encode64(file_open)
+  blob = SQLite3::Blob.new image
+
+  # insert user data into details table
+  db.execute('insert into details (id, name, age, num_1, num_2, num_3, quote)
+              values(?, ?, ?, ?, ?, ?, ?)', [id, name, age, n1, n2, n3, quote])
+
+  # insert user image into images table
+  db.execute('insert into images (id, details_id, image)
+              values(?, ?, ?)', [id, id, blob])
+
 end
 
 # Method to rearrange names for (top > down) then (left > right) column population
