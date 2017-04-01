@@ -49,7 +49,7 @@ end
 # Method to rearrange names for (top > down) then (left > right) column population
 def rotate_names(names)
   quotient = names.count/3  # baseline for number of names per column
-  names.count % quotient > 0 ? remainder = 1 : remainder = 0  # remainder to ensure no names dropped
+  names.count % 3 > 0 ? remainder = 1 : remainder = 0  # remainder to ensure no names dropped
   max_column_count = quotient + remainder  # add quotient & remainder to get max number of names per column
   matrix = names.each_slice(max_column_count).to_a    # names divided into three (inner) arrays
   results = matrix[0].zip(matrix[1], matrix[2]).flatten   # names rearranged (top > bottom) then (left > right) in table
@@ -62,6 +62,7 @@ def get_names()
   names = []
   query = db.execute("select name from details order by name")
   query.each { |name| names.push(name[0])}
+  names
   sorted = names.count > 3 ? rotate_names(names) : names  # rerrange names if more than 3 names
 end
 
