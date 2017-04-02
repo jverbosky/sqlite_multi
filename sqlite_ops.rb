@@ -10,40 +10,52 @@ def read_db()
   end
 end
 
+# Method to determine if value is too long or if user in current user hash is already in JSON file
+def check_values(user_hash)
+  db = read_db()  # open database for review
+  flag = 0
+  feedback = ""
+  detail = ""
+  user_hash.each do |key, value|
+    flag = 2 if key == "age" && value.to_i > 120
+    (flag = 3; detail = key) if value.length > 20
+    flag = 4 if key == "name" && value =~ /[^a-zA-Z ]/
+    (flag = 5; detail = key) if key =~ /age|n1|n2|n3/ && value =~ /[^0-9.,]/
+  end
+  users = db.execute("select name from details order by name").flatten
+  users.each { |user| flag = 1 if user == user_hash["name"]}
+  case flag
+    when 1 then feedback = "We already have details for that person - please enter a different person."
+    when 2 then feedback = "I don't think you're really that old - please try again."
+    when 3 then feedback = "The value for '#{detail}' is too long - please try again with a shorter value."
+    when 4 then feedback = "Your name should only contain letters - please try again."
+    when 5 then feedback = "The value for '#{detail}' should only have numbers - please try again."
+  end
+  return feedback
+end
+
 # Method to add current user hash to SQLite db
 def write_db(user_hash)
-
-  # open database for updating
-  db = read_db()
-
-  # determine current max index (id) in details table
-  db.results_as_hash
-  max_id = db.execute('select max("id") from details')[0][0]
-
-  # set index variable based on current max index value
-  max_id == nil ? id = 1 : id = max_id + 1
-
-  # prepare data from user_hash for database insert
-  name = user_hash["name"]
-  age = user_hash["age"]
-  n1 = user_hash["n1"]
-  n2 = user_hash["n2"]
-  n3 = user_hash["n3"]
-  quote = user_hash["quote"]
-
-  # prepare image for database insertion (use strict base64 encoding)
-  file_open = File.binread(user_hash["image"][:tempfile])
-  image = Base64.strict_encode64(file_open)
-  blob = SQLite3::Blob.new image
-
-  # insert user data into details table
-  db.execute('insert into details (id, name, age, num_1, num_2, num_3, quote)
-              values(?, ?, ?, ?, ?, ?, ?)', [id, name, age, n1, n2, n3, quote])
-
-  # insert user image into images table
-  db.execute('insert into images (id, details_id, image)
-              values(?, ?, ?)', [id, id, blob])
-
+  feedback = check_values(user_hash)
+  if feedback == ""
+    db = read_db() # open database for updating
+    db.results_as_hash  # determine current max index (id) in details table
+    max_id = db.execute('select max("id") from details')[0][0]
+    max_id == nil ? id = 1 : id = max_id + 1  # set index variable based on current max index value
+    name = user_hash["name"]  # prepare data from user_hash for database insert
+    age = user_hash["age"]
+    n1 = user_hash["n1"]
+    n2 = user_hash["n2"]
+    n3 = user_hash["n3"]
+    quote = user_hash["quote"]
+    file_open = File.binread(user_hash["image"][:tempfile])  # prepare image for database insertion
+    image = Base64.strict_encode64(file_open)   # use strict base64 encoding
+    blob = SQLite3::Blob.new image
+    db.execute('insert into details (id, name, age, num_1, num_2, num_3, quote)
+                values(?, ?, ?, ?, ?, ?, ?)', [id, name, age, n1, n2, n3, quote])
+    db.execute('insert into images (id, details_id, image)
+                values(?, ?, ?)', [id, id, blob])
+  end
 end
 
 # Method to rearrange names for (top > down) then (left > right) column population

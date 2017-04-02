@@ -31,7 +31,7 @@
         </tr>
         <tr>
           <td class= "wide"><b>Avatar: </b></td>
-          <td class= "wide"><input type = "file" accept = "image/*" name = "user[image]" value = "<%= avatar %>" required></td>
+          <td class= "wide"><input type = "file" accept = "image/*" name = "user[image]" value = "<%= image %>" required></td>
         </tr>
       </table>
       <div class = "button">
@@ -41,5 +41,10 @@
   </div>
 
   <hr>
+
+  <!-- only populated if user already in SQL db -->
+  <div class="feedback">
+    <p><i><%= feedback %></i></p>
+  </div>
 
 </div>
