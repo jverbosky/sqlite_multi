@@ -101,3 +101,5 @@ end
 def compare(sum, age)
   comparison = (sum < age.to_i) ? "less" : "greater"
 end
+
+p get_data("Jim")
